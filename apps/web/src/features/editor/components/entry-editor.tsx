@@ -30,19 +30,28 @@ export function EntryEditor({ initialEntry }: { initialEntry: Entry | null }) {
 
     const performSave = useCallback(async (currentTitle: string, currentContent: string, currentId: number | 'new') => {
         setStatus('saving');
-        const result = await saveEntry({
-            id: currentId,
-            title: currentTitle,
-            content: currentContent
-        });
+        try {
+            const result = await saveEntry({
+                id: currentId,
+                title: currentTitle,
+                content: currentContent
+            });
 
-        if (result.success && result.entry) {
-            setStatus('saved');
-            if (currentId === 'new') {
-                setId(result.entry.id);
-                window.history.replaceState(null, '', `/entry/${result.entry.id}`);
+            if (result.success && result.entry) {
+                setStatus('saved');
+                if (currentId === 'new') {
+                    setId(result.entry.id);
+                    window.history.replaceState(null, '', `/entry/${result.entry.id}`);
+                }
+            } else {
+                setStatus('unsaved');
+                if (result.message === 'Unauthorized') {
+                    // Optional: You could trigger a re-auth flow or show a specific error
+                    console.error("Save failed: Unauthorized");
+                }
             }
-        } else {
+        } catch (error) {
+            console.error("Critical error during save:", error);
             setStatus('unsaved');
         }
     }, []);
