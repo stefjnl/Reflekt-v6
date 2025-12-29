@@ -1,0 +1,17 @@
+[Unit]
+Description=Reflekt v6 Stack
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+# Update this path to your project root
+WorkingDirectory=/opt/reflekt
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose down
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
