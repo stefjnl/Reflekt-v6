@@ -1,14 +1,15 @@
 'use client';
 
+import { deleteEntry } from '@/features/editor/actions';
 import { groupEntries } from '@/lib/date-utils';
 import { uiStore } from '@/lib/store';
-import { cn } from '@/lib/utils'; // Need to create utils
-import { Menu, MessageSquare, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Archive, Menu, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useSnapshot } from 'valtio';
 
-// Mock data type until we integrate DB
+// ... (Entry type def)
 type Entry = {
     id: number;
     title: string;
@@ -22,9 +23,25 @@ interface SidebarProps {
 export function Sidebar({ entries = [] }: SidebarProps) {
     const { sidebarOpen } = useSnapshot(uiStore);
     const pathname = usePathname();
+    const router = useRouter();
 
     const grouped = groupEntries(entries);
     const groups = ['Today', 'Yesterday', 'Previous 30 Days'] as const;
+
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Simple confirmation for now
+        if (window.confirm('Delete this entry?')) {
+            await deleteEntry(id);
+            // Ideally we'd validtate/optimistically update, but router.refresh works for server components
+            router.refresh();
+            if (pathname === `/entry/${id}`) {
+                router.push('/');
+            }
+        }
+    };
 
     return (
         <aside
@@ -44,7 +61,10 @@ export function Sidebar({ entries = [] }: SidebarProps) {
                     <Menu size={20} />
                 </button>
                 <div className="flex-1 font-semibold text-lg tracking-tight bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-slate-400 bg-clip-text text-transparent">Reflekt</div>
-                <button className="p-2 rounded-full bg-slate-100 dark:bg-white/10 hover:opacity-80 transition-colors text-slate-700 dark:text-slate-200">
+                <button
+                    onClick={() => router.push('/entry/new')}
+                    className="p-2 rounded-full bg-slate-100 dark:bg-white/10 hover:opacity-80 transition-colors text-slate-700 dark:text-slate-200"
+                >
                     <Plus size={18} />
                 </button>
             </div>
@@ -69,8 +89,15 @@ export function Sidebar({ entries = [] }: SidebarProps) {
                                                     : "text-slate-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
                                             )}
                                         >
-                                            <MessageSquare size={14} className="opacity-70" />
-                                            <span className="truncate">{entry.title || 'Untitled'}</span>
+                                            <MessageSquare size={14} className="opacity-70 shrink-0" />
+                                            <span className="truncate flex-1">{entry.title || 'Untitled'}</span>
+
+                                            <div
+                                                onClick={(e) => handleDelete(e, entry.id)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/30 dark:hover:text-red-400 rounded transition-all shrink-0"
+                                            >
+                                                <Trash2 size={12} />
+                                            </div>
                                         </Link>
                                     </li>
                                 ))}
@@ -80,10 +107,14 @@ export function Sidebar({ entries = [] }: SidebarProps) {
                 })}
             </nav>
 
-            <div className="p-4 border-t border-gray-200/50 dark:border-gray-800/50">
-                <div className="text-xs text-center text-gray-400">
-                    Reflekt v6
-                </div>
+            <div className="p-4 border-t border-slate-200/50 dark:border-white/5">
+                <Link
+                    href="/entries"
+                    className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                    <Archive size={14} />
+                    View all entries
+                </Link>
             </div>
         </aside>
     );
