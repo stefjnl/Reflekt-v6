@@ -28,12 +28,14 @@ export function TiptapEditor({ content, onChange, editable = true }: TiptapEdito
         },
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
+            contentRef.current = html; // Update ref to match current editor state
             if (onChange) onChange(html);
         },
         immediatelyRender: false,
     });
 
-    // Sync content if it changes externally
+    // Sync content ONLY if it changes externally (e.g. navigation)
+    // and NOT as a result of our own typing.
     useEffect(() => {
         if (editor && content !== contentRef.current) {
             editor.commands.setContent(content);

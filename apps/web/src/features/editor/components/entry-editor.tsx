@@ -47,7 +47,17 @@ export function EntryEditor({ initialEntry }: { initialEntry: Entry | null }) {
         }
     }, []);
 
+    const isFirstUpdate = useRef(true);
+
     const handleChange = (newTitle: string, newContent: string) => {
+        // Prevent auto-save on mount if content is identical
+        if (isFirstUpdate.current) {
+            isFirstUpdate.current = false;
+            if (newContent === (initialEntry?.content || '')) {
+                return;
+            }
+        }
+
         setTitle(newTitle);
         setContent(newContent);
         setStatus('unsaved');
@@ -80,12 +90,17 @@ export function EntryEditor({ initialEntry }: { initialEntry: Entry | null }) {
     };
 
     useEffect(() => {
+        isFirstUpdate.current = true;
         if (initialEntry) {
             setTitle(initialEntry.title);
             setContent(initialEntry.content);
             setId(initialEntry.id);
+        } else {
+            setTitle(defaultTitle);
+            setContent('');
+            setId('new');
         }
-    }, [initialEntry]);
+    }, [initialEntry, defaultTitle]);
 
     return (
         <div className="max-w-3xl mx-auto py-8 relative min-h-[calc(100vh-100px)] flex flex-col">
